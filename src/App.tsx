@@ -38,6 +38,7 @@ function App() {
 							pattern: "{CREATED_YYYY}/{CREATED_MM}{CREATED_DD}/{FILE_NAME}",
 							source: source.value,
 							target: target.value,
+							dryRun: false,
 						})
 							.then(() => {
 								message.value = "Done!";

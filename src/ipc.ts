@@ -1,19 +1,16 @@
 import { invoke } from "@tauri-apps/api";
 import { listen } from "@tauri-apps/api/event";
-import type { PreviewResult } from "../src-tauri/bindings/PreviewResult";
+import type { Commit } from "../src-tauri/bindings/Commit";
 import { promiseWithResolvers } from "./promiseWithResolvers";
 
 type CommitArgs = {
 	pattern: string;
 	source: string;
 	target: string;
+	dryRun: boolean;
 };
-export const preview = (args: CommitArgs) => {
-	return invoke<PreviewResult>("preview", args);
-};
-
 export const commit = (args: CommitArgs) => {
-	return invoke("commit", args);
+	return invoke<Commit>("commit", args);
 };
 
 export const selectDirectory = async () => {
