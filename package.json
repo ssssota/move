@@ -13,14 +13,17 @@
 	"dependencies": {
 		"@preact/signals": "^1.2.2",
 		"@tauri-apps/api": "^1",
+		"@unocss/reset": "^0.58.5",
 		"preact": "^10.16.0"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.24.0",
 		"@biomejs/biome": "^1.6.0",
-		"@preact/preset-vite": "^2.5.0",
+		"@prefresh/vite": "^2.4.5",
 		"@tauri-apps/cli": "^1",
 		"typescript": "^5.0.2",
+		"unocss": "^0.58.5",
 		"vite": "^5.0.0"
-	}
+	},
+	"packageManager": "pnpm@8.15.4"
 }

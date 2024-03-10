@@ -1,0 +1,7 @@
+:not(input, textarea) {
+  user-select: none;
+}
+
+html, body, #root {
+  height: 100%;
+}
