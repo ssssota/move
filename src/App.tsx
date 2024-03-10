@@ -1,6 +1,7 @@
 import { signal } from "@preact/signals";
 import { useRef } from "preact/hooks";
 import { commit, preview, selectDirectory } from "./ipc";
+import { useFileDrop } from "./useFileDrop";
 
 const source = signal<string>("");
 const target = signal<string>("");
@@ -18,6 +19,16 @@ const control = async <T,>(promise: Promise<T>): Promise<T> => {
 
 function App() {
 	const patternRef = useRef<HTMLInputElement>(null);
+	const { ref: sourceRef } = useFileDrop<HTMLParagraphElement>({
+		onDrop(paths) {
+			source.value = paths[0];
+		},
+	});
+	const { ref: targetRef } = useFileDrop<HTMLParagraphElement>({
+		onDrop(paths) {
+			target.value = paths[0];
+		},
+	});
 
 	return (
 		<main>
@@ -38,7 +49,7 @@ function App() {
 					);
 				}}
 			>
-				<p>
+				<p ref={sourceRef}>
 					From: {source.value}
 					<button
 						type="button"
@@ -54,7 +65,7 @@ function App() {
 						📂
 					</button>
 				</p>
-				<p>
+				<p ref={targetRef}>
 					To: {target.value}
 					<button
 						type="button"
