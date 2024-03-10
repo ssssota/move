@@ -16,23 +16,24 @@ const control = async <T,>(promise: Promise<T>): Promise<T> => {
 		uncontrollable.value = false;
 	}
 };
+const sourceProps = {
+	onDrop: (paths: string[]) => {
+		source.value = paths[0];
+	},
+};
+const targetProps = {
+	onDrop: (paths: string[]) => {
+		target.value = paths[0];
+	},
+};
 
 function App() {
 	const patternRef = useRef<HTMLInputElement>(null);
-	const { ref: sourceRef } = useFileDrop<HTMLParagraphElement>({
-		onDrop(paths) {
-			source.value = paths[0];
-		},
-	});
-	const { ref: targetRef } = useFileDrop<HTMLParagraphElement>({
-		onDrop(paths) {
-			target.value = paths[0];
-		},
-	});
+	const { ref: sourceRef } = useFileDrop<HTMLParagraphElement>(sourceProps);
+	const { ref: targetRef } = useFileDrop<HTMLParagraphElement>(targetProps);
 
 	return (
 		<main>
-			<h1>move</h1>
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
