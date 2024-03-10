@@ -7,8 +7,8 @@ mod config;
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            // commands::read_config::read_config,
-            // commands::save_config::save_config,
+            commands::read_config::read_config,
+            commands::save_config::save_config,
             commands::commit::preview,
             commands::commit::commit,
             commands::select_directory::select_directory,

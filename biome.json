@@ -13,6 +13,6 @@
 		}
 	},
 	"files": {
-		"ignore": ["src-tauri/**/*"]
+		"ignore": ["src-tauri/**/*", "target/**/*", "dist/**/*"]
 	}
 }

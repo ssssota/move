@@ -20,7 +20,7 @@ pub struct Progress {
 #[tauri::command]
 pub fn preview(source: String, target: String, pattern: String) -> Result<PreviewResult, String> {
     let mut target_files = vec![];
-    for entry in WalkDir::new(&source).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(source).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
             target_files.push(entry);
         }
@@ -53,7 +53,7 @@ pub fn commit<R: tauri::Runtime>(
     target: String,
     pattern: String,
 ) -> Result<(), String> {
-    let preview = preview(source.clone(), target.clone(), pattern.clone())?;
+    let preview = preview(source, target, pattern)?;
     let total = preview.entries.len();
     for (index, (source, target)) in preview.entries.into_iter().enumerate() {
         std::fs::create_dir_all(Path::new(&target).parent().unwrap())
