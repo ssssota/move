@@ -1,6 +1,6 @@
+import "virtual:uno.css";
 import "@unocss/reset/tailwind.css";
 import { render } from "preact";
-import "virtual:uno.css";
 import App from "./App";
 import "./index.css";
 
