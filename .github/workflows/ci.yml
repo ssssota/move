@@ -8,10 +8,15 @@ on:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+
     steps:
+      - run: git config --global core.autocrlf false && git config --global core.eol lf
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
-          use-ubuntu: true
+          use-ubuntu: ${{ matrix.platform == 'ubuntu-latest' }}
       - run: pnpm lint
