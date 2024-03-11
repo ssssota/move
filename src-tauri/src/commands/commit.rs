@@ -2,7 +2,7 @@ use std::path::Path;
 
 use chrono::{DateTime, Datelike, Local};
 use ts_rs::TS;
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 #[derive(serde::Serialize, Clone, TS)]
 #[ts(export)]
@@ -25,45 +25,48 @@ pub fn commit<R: tauri::Runtime>(
     pattern: String,
     dry_run: bool,
 ) -> Result<Commit, String> {
-    let source = Path::new(&source);
-    let target = Path::new(&target);
-    if !source.is_absolute() {
+    let source_dir = Path::new(&source);
+    let target_dir = Path::new(&target);
+    if !source_dir.is_absolute() {
         return Err("Source path must be absolute".to_string());
     }
-    if !source.exists() {
-        return Err(format!("Source path does not exist: {}", source.display()));
+    if !source_dir.exists() {
+        return Err(format!(
+            "Source path does not exist: {}",
+            source_dir.display()
+        ));
     }
-    if !target.is_absolute() {
+    if !target_dir.is_absolute() {
         return Err("Target path must be absolute".to_string());
     }
-    let mut target_files = vec![];
-    for entry in WalkDir::new(source)
+    if source_dir == target_dir {
+        return Err("Source and target path must be different".to_string());
+    }
+    let entries = WalkDir::new(source_dir)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
-    {
-        target_files.push(entry);
-    }
-    let mut entries = vec![];
-    for entry in target_files {
-        let source = entry.path().to_string_lossy().to_string();
-        let meta = entry
-            .metadata()
-            .map_err(|e| format!("Failed to load metadata: {}", e))?;
-        let created: DateTime<Local> = meta
-            .created()
-            .map_err(|e| format!("Failed to load metadata(created): {}", e))?
-            .into();
-        let resolved_pattern = pattern
-            .replace("{CREATED_YYYY}", format!("{:04}", created.year()).as_str())
-            .replace("{CREATED_MM}", format!("{:02}", created.month()).as_str())
-            .replace("{CREATED_DD}", format!("{:02}", created.day()).as_str())
-            .replace("{FILE_NAME}", &entry.file_name().to_string_lossy());
-        entries.push((
-            source,
-            target.join(resolved_pattern).to_string_lossy().to_string(),
-        ));
-    }
+        .map(|entry| {
+            let meta = entry
+                .metadata()
+                .map_err(|e| format!("Failed to load metadata: {}", e))?;
+            let created: DateTime<Local> = meta
+                .created()
+                .map_err(|e| format!("Failed to load metadata(created): {}", e))?
+                .into();
+            let resolved_pattern = pattern
+                .replace("{CREATED_YYYY}", format!("{:04}", created.year()).as_str())
+                .replace("{CREATED_MM}", format!("{:02}", created.month()).as_str())
+                .replace("{CREATED_DD}", format!("{:02}", created.day()).as_str())
+                .replace("{FILE_NAME}", &entry.file_name().to_string_lossy());
+            let source = entry.path();
+            let target = target_dir.join(resolved_pattern);
+            Ok((
+                source.to_string_lossy().to_string(),
+                target.to_string_lossy().to_string(),
+            ))
+        })
+        .collect::<Result<Vec<(String, String)>, String>>()?;
     if dry_run {
         return Ok(Commit { entries });
     }
@@ -76,7 +79,9 @@ pub fn commit<R: tauri::Runtime>(
                 total,
             },
         );
-        move_file(source, target)?;
+        if !Path::new(target).exists() {
+            move_file(source, target)?;
+        }
     }
     Ok(Commit { entries })
 }

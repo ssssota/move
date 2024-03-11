@@ -33,6 +33,7 @@ function App() {
 				class="h-full grid grid-areas-[source_target,control_control] grid-rows-[1fr_auto] grid-cols-2"
 				onSubmit={(e) => {
 					e.preventDefault();
+					message.value = "Moving...";
 					control(
 						commit({
 							pattern: "{CREATED_YYYY}/{CREATED_MM}{CREATED_DD}/{FILE_NAME}",
@@ -51,7 +52,7 @@ function App() {
 			>
 				<button
 					ref={sourceRef}
-					class="area-[source] outline-dashed -outline-offset-10 outline-gray outline-4 rounded"
+					class="area-[source] outline-dashed -outline-offset-10 outline-gray outline-4 rounded hover:bg-gray-100"
 					type="button"
 					disabled={uncontrollable.value}
 					onClick={() => {
@@ -66,7 +67,7 @@ function App() {
 				</button>
 				<button
 					ref={targetRef}
-					class="area-[target] outline-dashed -outline-offset-10 outline-gray outline-4 rounded"
+					class="area-[target] outline-dashed -outline-offset-10 outline-gray outline-4 rounded hover:bg-gray-100"
 					type="button"
 					disabled={uncontrollable.value}
 					onClick={() => {
