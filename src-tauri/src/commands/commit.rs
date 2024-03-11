@@ -2,7 +2,7 @@ use std::path::Path;
 
 use chrono::{DateTime, Datelike, Local};
 use ts_rs::TS;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
 #[derive(serde::Serialize, Clone, TS)]
 #[ts(export)]

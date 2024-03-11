@@ -4,7 +4,7 @@ import { useFileDrop } from "./useFileDrop";
 
 const source = signal<string>("");
 const target = signal<string>("");
-const message = signal<string>("");
+const message = signal<string>("Select source and target directories.");
 const uncontrollable = signal<boolean>(false);
 const control = <T,>(promise: Promise<T>): Promise<T> => {
 	uncontrollable.value = true;
@@ -30,7 +30,7 @@ function App() {
 	return (
 		<main class="h-full">
 			<form
-				class="h-full grid grid-areas-[source_target,control_control] grid-rows-[1fr_auto] grid-cols-2"
+				class="h-full grid grid-areas-[source_arrow_target,control_control_control] grid-rows-[1fr_auto] grid-cols-[1fr_auto_1fr]"
 				onSubmit={(e) => {
 					e.preventDefault();
 					message.value = "Moving...";
@@ -65,6 +65,13 @@ function App() {
 				>
 					📂 {source.value}
 				</button>
+				<div
+					title="Move to"
+					aria-label="move to"
+					class="area-[arrow] grid place-content-center"
+				>
+					▶
+				</div>
 				<button
 					ref={targetRef}
 					class="area-[target] outline-dashed -outline-offset-10 outline-gray outline-4 rounded hover:bg-gray-100"
@@ -80,11 +87,16 @@ function App() {
 				>
 					📂 {target.value}
 				</button>
-				<p class="area-[control]">
-					<button type="submit" disabled={uncontrollable.value}>
-						Move! {message.value}
+				<div class="area-[control] p-1 flex items-center justify-between">
+					<p>{message.value}</p>
+					<button
+						type="submit"
+						disabled={uncontrollable.value}
+						class="py-1 px-2 rounded border hover:bg-gray-100"
+					>
+						Move!
 					</button>
-				</p>
+				</div>
 			</form>
 		</main>
 	);
