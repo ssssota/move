@@ -10,6 +10,7 @@ pub fn save_config<R: tauri::Runtime>(
         .join(app.config().tauri.bundle.identifier.clone())
         .join(CONFIG_FILE);
     let config = serde_json::to_string(&config).map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(config_path.parent().unwrap()).map_err(|e| e.to_string())?;
     std::fs::write(config_path, config).map_err(|e| e.to_string())?;
     Ok(())
 }

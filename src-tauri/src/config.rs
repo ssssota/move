@@ -8,18 +8,18 @@ pub const CONFIG_FILE: &str = "config.json";
 #[ts(export)]
 pub enum Config {
     V0 {
-        source: Option<String>,
-        target: Option<String>,
-        pattern: Option<String>,
+        source: String,
+        target: String,
+        pattern: String,
     },
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config::V0 {
-            source: None,
-            target: None,
-            pattern: None,
+            source: "".to_string(),
+            target: "".to_string(),
+            pattern: "".to_string(),
         }
     }
 }

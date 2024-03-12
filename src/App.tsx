@@ -1,9 +1,11 @@
-import { signal } from "@preact/signals";
-import { commit, selectDirectory } from "./ipc";
+import { batch, effect, signal } from "@preact/signals";
+import { commit, readConfig, saveConfig, selectDirectory } from "./ipc";
 import { useFileDrop } from "./useFileDrop";
+import { useRef } from "preact/hooks";
 
 const source = signal<string>("");
 const target = signal<string>("");
+const pattern = signal<string>("");
 const message = signal<string>("Select source and target directories.");
 const uncontrollable = signal<boolean>(false);
 const control = <T,>(promise: Promise<T>): Promise<T> => {
@@ -22,8 +24,25 @@ const targetProps = {
 		target.value = paths[0];
 	},
 };
+readConfig().then((c) => {
+	batch(() => {
+		source.value = c.source;
+		target.value = c.target;
+		pattern.value =
+			c.pattern || "{CREATED_YYYY}/{CREATED_MM}{CREATED_DD}/{FILE_NAME}";
+	});
+});
+effect(() => {
+	saveConfig({
+		version: "V0",
+		source: source.value,
+		target: target.value,
+		pattern: pattern.value,
+	});
+});
 
 function App() {
+	const dialogRef = useRef<HTMLDialogElement>(null);
 	const { ref: sourceRef } = useFileDrop<HTMLButtonElement>(sourceProps);
 	const { ref: targetRef } = useFileDrop<HTMLButtonElement>(targetProps);
 
@@ -36,7 +55,7 @@ function App() {
 					message.value = "Moving...";
 					control(
 						commit({
-							pattern: "{CREATED_YYYY}/{CREATED_MM}{CREATED_DD}/{FILE_NAME}",
+							pattern: pattern.value,
 							source: source.value,
 							target: target.value,
 							dryRun: false,
@@ -52,7 +71,7 @@ function App() {
 			>
 				<button
 					ref={sourceRef}
-					class="area-[source] outline-dashed -outline-offset-10 outline-gray outline-4 rounded hover:bg-gray-100"
+					class="area-[source] break-anywhere p-4 outline-dashed -outline-offset-10 outline-gray outline-4 rounded hover:bg-gray-100 focus-visible:bg-gray-100"
 					type="button"
 					disabled={uncontrollable.value}
 					onClick={() => {
@@ -74,7 +93,7 @@ function App() {
 				</div>
 				<button
 					ref={targetRef}
-					class="area-[target] outline-dashed -outline-offset-10 outline-gray outline-4 rounded hover:bg-gray-100"
+					class="area-[target] break-anywhere p-4 outline-dashed -outline-offset-10 outline-gray outline-4 rounded hover:bg-gray-100 focus-visible:bg-gray-100"
 					type="button"
 					disabled={uncontrollable.value}
 					onClick={() => {
@@ -88,16 +107,63 @@ function App() {
 					📂 {target.value}
 				</button>
 				<div class="area-[control] p-1 flex items-center justify-between">
-					<p>{message.value}</p>
-					<button
-						type="submit"
-						disabled={uncontrollable.value}
-						class="py-1 px-2 rounded border hover:bg-gray-100"
-					>
-						Move!
-					</button>
+					<p class="truncate">{message.value}</p>
+					<div class="flex gap-1">
+						<button
+							type="submit"
+							disabled={uncontrollable.value}
+							class="py-1 px-2 rounded border hover:bg-gray-100 focus-visible:bg-gray-100"
+						>
+							Move!
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								dialogRef.current?.showModal();
+							}}
+							disabled={uncontrollable.value}
+							class="py-1 px-2 rounded border hover:bg-gray-100 focus-visible:bg-gray-100"
+							aria-label="Open settings"
+						>
+							⚙️
+						</button>
+					</div>
 				</div>
 			</form>
+			<dialog ref={dialogRef}>
+				<form
+					class="fixed inset-0 bg-white p-4 gap-4 flex flex-col justify-center"
+					method="dialog"
+					onSubmit={(e) => {
+						pattern.value = e.currentTarget.pattern.value;
+					}}
+				>
+					<label class="grid grid-cols-[auto_1fr]">
+						<span>Pattern:</span>
+						<input
+							type="text"
+							value={pattern.value}
+							name="pattern"
+							class="font-mono border rounded px-1"
+						/>
+					</label>
+					<p class="flex justify-end gap-1">
+						<button
+							type="button"
+							class="py-1 px-2 rounded border hover:bg-gray-100 focus-visible:bg-gray-100"
+							onClick={() => dialogRef.current?.close()}
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							class="py-1 px-2 rounded border hover:bg-gray-100 focus-visible:bg-gray-100"
+						>
+							OK
+						</button>
+					</p>
+				</form>
+			</dialog>
 		</main>
 	);
 }
