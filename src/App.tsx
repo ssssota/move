@@ -1,7 +1,7 @@
 import { batch, effect, signal } from "@preact/signals";
+import { useRef } from "preact/hooks";
 import { commit, readConfig, saveConfig, selectDirectory } from "./ipc";
 import { useFileDrop } from "./useFileDrop";
-import { useRef } from "preact/hooks";
 
 const source = signal<string>("");
 const target = signal<string>("");
