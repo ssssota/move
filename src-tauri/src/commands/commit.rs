@@ -13,7 +13,7 @@ pub struct Commit {
 #[derive(serde::Serialize, Clone, TS)]
 #[ts(export)]
 pub struct Progress {
-    current: usize,
+    complete: usize,
     total: usize,
 }
 
@@ -72,16 +72,16 @@ pub fn commit<R: tauri::Runtime>(
     }
     let total = entries.len();
     for (index, (source, target)) in entries.iter().enumerate() {
-        let _ = window.emit(
-            "move-progress",
-            Progress {
-                current: index,
-                total,
-            },
-        );
         if !Path::new(target).exists() {
             move_file(source, target)?;
         }
+        let _ = window.emit(
+            "commit-progress",
+            Progress {
+                complete: index + 1,
+                total,
+            },
+        );
     }
     Ok(Commit { entries })
 }

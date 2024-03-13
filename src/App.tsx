@@ -1,11 +1,15 @@
 import { batch, effect, signal } from "@preact/signals";
-import { useRef } from "preact/hooks";
+import { listen } from "@tauri-apps/api/event";
+import { useEffect, useRef } from "preact/hooks";
+import { ProgressBar } from "./ProgressBar";
 import { commit, readConfig, saveConfig, selectDirectory } from "./ipc";
+import type { Progress } from "./types";
 import { useFileDrop } from "./useFileDrop";
 
 const source = signal<string>("");
 const target = signal<string>("");
 const pattern = signal<string>("");
+const progress = signal<number>(0);
 const message = signal<string>("Select source and target directories.");
 const uncontrollable = signal<boolean>(false);
 const control = <T,>(promise: Promise<T>): Promise<T> => {
@@ -46,8 +50,17 @@ function App() {
 	const { ref: sourceRef } = useFileDrop<HTMLButtonElement>(sourceProps);
 	const { ref: targetRef } = useFileDrop<HTMLButtonElement>(targetProps);
 
+	useEffect(() => {
+		const unlisten = listen<Progress>("commit-progress", (ev) => {
+			progress.value = Math.floor(ev.payload.complete / ev.payload.total);
+		});
+		return () => {
+			unlisten.then((fn) => fn());
+		};
+	}, []);
+
 	return (
-		<main class="h-full">
+		<main class="relative h-full">
 			<form
 				class="h-full grid grid-areas-[source_arrow_target,control_control_control] grid-rows-[1fr_auto] grid-cols-[1fr_auto_1fr]"
 				onSubmit={(e) => {
@@ -60,8 +73,8 @@ function App() {
 							target: target.value,
 							dryRun: false,
 						})
-							.then(() => {
-								message.value = "Done!";
+							.then((res) => {
+								message.value = `Done! (${res.entries.length} files)`;
 							})
 							.catch((err) => {
 								message.value = `Error: ${err}`;
@@ -106,7 +119,7 @@ function App() {
 				>
 					📂 {target.value}
 				</button>
-				<div class="area-[control] p-1 flex items-center justify-between">
+				<div class="area-[control] px-1 pt-0.5 pb-2 flex items-center justify-between">
 					<p class="truncate">{message.value}</p>
 					<div class="flex gap-1">
 						<button
@@ -164,6 +177,10 @@ function App() {
 					</p>
 				</form>
 			</dialog>
+
+			<div class="fixed bottom-0 w-full text-sky-300">
+				{progress.value > 0 && <ProgressBar value={progress.value} />}
+			</div>
 		</main>
 	);
 }
