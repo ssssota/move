@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use chrono::{DateTime, Datelike, Local};
+use chrono::{DateTime, Datelike, Local, NaiveDateTime};
 use ts_rs::TS;
 use walkdir::WalkDir;
 
@@ -47,13 +47,16 @@ pub fn commit<R: tauri::Runtime>(
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
         .map(|entry| {
-            let meta = entry
-                .metadata()
-                .map_err(|e| format!("Failed to load metadata: {}", e))?;
-            let created: DateTime<Local> = meta
-                .created()
-                .map_err(|e| format!("Failed to load metadata(created): {}", e))?
-                .into();
+            let created = read_taken_at_from_exif(entry.path()).or_else(|_| {
+                let meta = entry
+                    .metadata()
+                    .map_err(|e| format!("Failed to load metadata: {}", e))?;
+                let created: DateTime<Local> = meta
+                    .created()
+                    .map_err(|e| format!("Failed to load metadata(created): {}", e))?
+                    .into();
+                Ok::<chrono::DateTime<Local>, String>(created)
+            })?;
             let resolved_pattern = pattern
                 .replace("{CREATED_YYYY}", format!("{:04}", created.year()).as_str())
                 .replace("{CREATED_MM}", format!("{:02}", created.month()).as_str())
@@ -103,5 +106,31 @@ fn move_file(source: &str, target: &str) -> Result<(), String> {
         std::fs::remove_file(source).map_err(|e| format!("Failed to remove file: {}", e))
     } else {
         std::fs::rename(source, target).map_err(|e| format!("Failed to move file: {}", e))
+    }
+}
+
+fn read_taken_at_from_exif<P>(path: P) -> Result<DateTime<Local>, String>
+where
+    P: AsRef<Path>,
+{
+    let file =
+        std::fs::File::open(path.as_ref()).map_err(|e| format!("Failed to open file: {}", e))?;
+    let mut bufreader = std::io::BufReader::new(file);
+    let exif = exif::Reader::new()
+        .read_from_container(&mut bufreader)
+        .map_err(|e| format!("Failed to read exif: {}", e))?;
+    let taken_at = exif
+        .get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY)
+        .or_else(|| exif.get_field(exif::Tag::DateTimeDigitized, exif::In::PRIMARY))
+        .or_else(|| exif.get_field(exif::Tag::DateTime, exif::In::PRIMARY))
+        .ok_or("Failed to find DateTimeOriginal")?;
+    let parsed =
+        NaiveDateTime::parse_from_str(&taken_at.display_value().to_string(), "%Y-%m-%d %H:%M:%S")
+            .map_err(|e| format!("Failed to parse DateTimeOriginal: {}", e))
+            .map(|naive| naive.and_local_timezone(Local))?;
+    match parsed {
+        chrono::LocalResult::None => Err("Failed to parse DateTimeOriginal".to_string()),
+        chrono::LocalResult::Single(datetime) => Ok(datetime),
+        chrono::LocalResult::Ambiguous(datetime, _) => Ok(datetime),
     }
 }
