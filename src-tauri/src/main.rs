@@ -11,6 +11,7 @@ fn main() {
             commands::save_config::save_config,
             commands::commit::commit,
             commands::select_directory::select_directory,
+            commands::license::open_licenses,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
