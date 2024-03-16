@@ -1,0 +1,11 @@
+accepted = [
+    "MIT",
+    "Apache-2.0",
+    "MPL-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "Unicode-DFS-2016",
+    "Apache-2.0 WITH LLVM-exception"
+]
+ignore-build-dependencies = true
+ignore-dev-dependencies = true

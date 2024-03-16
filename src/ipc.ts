@@ -35,3 +35,7 @@ export const readConfig = () => {
 export const saveConfig = (config: Config) => {
 	return invoke("save_config", { config });
 };
+
+export const openLicenses = () => {
+	return invoke("open_licenses");
+};

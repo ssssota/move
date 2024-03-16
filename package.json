@@ -5,10 +5,12 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "tsc && vite build",
+		"build": "pnpm generate-license && vite build",
 		"fmt": "biome check --apply . && cargo fmt",
-		"lint": "biome check . && cargo clippy",
-		"tauri": "tauri"
+		"lint": "biome check . && cargo clippy && tsc",
+		"tauri": "tauri",
+		"generate-license": "cargo about generate -o public/licenses.html about.hbs",
+		"postinstall": "cargo install --locked cargo-about"
 	},
 	"dependencies": {
 		"@preact/signals": "^1.2.2",

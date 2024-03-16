@@ -4,7 +4,13 @@ import { listen } from "@tauri-apps/api/event";
 import type { ComponentChild } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { ProgressBar } from "./ProgressBar";
-import { commit, readConfig, saveConfig, selectDirectory } from "./ipc";
+import {
+	commit,
+	openLicenses,
+	readConfig,
+	saveConfig,
+	selectDirectory,
+} from "./ipc";
 import { getLatestRelease } from "./release";
 import type { Progress } from "./types";
 import { useFileDrop } from "./useFileDrop";
@@ -209,7 +215,7 @@ function App() {
 						</form>
 					</section>
 					<hr />
-					<section>
+					<section class="flex flex-col gap-4">
 						<h3 class="font-bold">About</h3>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-2">
 							{[
@@ -228,6 +234,11 @@ function App() {
 								</div>
 							))}
 						</dl>
+						<p>
+							<button type="button" onClick={openLicenses}>
+								Licenses
+							</button>
+						</p>
 					</section>
 				</div>
 			</dialog>
