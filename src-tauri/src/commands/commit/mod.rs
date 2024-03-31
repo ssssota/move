@@ -4,10 +4,8 @@ mod move_file;
 mod utils;
 
 use crate::commands::result::Result;
-
-use std::path::Path;
-
 use chrono::{DateTime, Datelike, Local};
+use std::path::Path;
 use ts_rs::TS;
 use walkdir::{DirEntry, WalkDir};
 
@@ -100,6 +98,7 @@ pub fn commit<R: tauri::Runtime>(
             },
         );
     }
+    let _ = remove_blank_dir_recursive(&source_dir);
     Ok(Commit { entries })
 }
 
@@ -112,4 +111,36 @@ fn get_created_at(entry: &DirEntry) -> Result<DateTime<Local>> {
         .map_err(|e| format!("Failed to load metadata(created): {}", e))?
         .into();
     Ok::<chrono::DateTime<Local>, String>(created)
+}
+
+fn remove_blank_dir_recursive<P>(path: &P) -> std::io::Result<()>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+    if path.is_dir() {
+        for entry in std::fs::read_dir(path)?.filter_map(|e| e.ok()) {
+            remove_blank_dir_recursive(&entry.path())?;
+        }
+        if is_blank_dir(path)? {
+            std::fs::remove_dir(path)?;
+        }
+    }
+    Ok(())
+}
+
+fn is_blank_dir<P>(path: &P) -> std::io::Result<bool>
+where
+    P: AsRef<Path> + ?Sized,
+{
+    let path = path.as_ref();
+    if path.is_dir() {
+        Ok(std::fs::read_dir(path)?
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name() != ".DS_Store")
+            .next()
+            .is_none())
+    } else {
+        Ok(false)
+    }
 }
