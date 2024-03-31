@@ -1,6 +1,8 @@
+use crate::commands::result::Result;
+
 // ref. https://docs.rs/tauri/1.6.1/tauri/window/struct.WindowBuilder.html#known-issues
 #[tauri::command]
-pub async fn open_licenses<R: tauri::Runtime>(app: tauri::AppHandle<R>) -> Result<(), String> {
+pub async fn open_licenses<R: tauri::Runtime>(app: tauri::AppHandle<R>) -> Result<()> {
     tauri::WindowBuilder::new(
         &app,
         "Licenses",

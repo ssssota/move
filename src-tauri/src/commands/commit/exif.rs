@@ -1,8 +1,10 @@
+use crate::commands::result::Result;
+use chrono::{DateTime, Local, NaiveDateTime};
 use std::{io::Seek, path::Path};
 
-use chrono::{DateTime, Local, NaiveDateTime};
+use super::utils;
 
-pub fn read_taken_at_from_exif<P>(path: P) -> Result<DateTime<Local>, String>
+pub fn read_taken_at_from_exif<P>(path: P) -> Result<DateTime<Local>>
 where
     P: AsRef<Path>,
 {
@@ -47,25 +49,8 @@ mod marker {
     pub const APP1: u8 = 0xe1;
     // The EXIF identifier.
     pub const EXIF_ID: [u8; 6] = *b"Exif\0\0";
-
-    pub fn read8<R>(reader: &mut R) -> Result<u8, std::io::Error>
-    where
-        R: std::io::Read,
-    {
-        let mut buf = [0u8; 1];
-        reader.read_exact(&mut buf).and(Ok(buf[0]))
-    }
-
-    pub fn read16<R>(reader: &mut R) -> Result<u16, std::io::Error>
-    where
-        R: std::io::Read,
-    {
-        let mut buf = [0u8; 2];
-        reader.read_exact(&mut buf)?;
-        Ok(u16::from_be_bytes(buf))
-    }
 }
-fn find_exif<R>(reader: &mut R) -> Result<Vec<u8>, String>
+fn find_exif<R>(reader: &mut R) -> Result<Vec<u8>>
 where
     R: std::io::BufRead,
 {
@@ -76,7 +61,7 @@ where
         let mut code;
         loop {
             code =
-                marker::read8(reader).map_err(|e| format!("Failed to read marker code: {}", e))?;
+                utils::read8(reader).map_err(|e| format!("Failed to read marker code: {}", e))?;
             if code != marker::P {
                 break;
             }
@@ -86,16 +71,16 @@ where
             continue;
         }
         // 0xFFE1 is the start of the EXIF data (APP1)
-        code = marker::read8(reader).map_err(|e| format!("Failed to read marker code: {}", e))?;
+        code = utils::read8(reader).map_err(|e| format!("Failed to read marker code: {}", e))?;
         if code != marker::P {
             continue;
         }
-        code = marker::read8(reader).map_err(|e| format!("Failed to read marker code: {}", e))?;
+        code = utils::read8(reader).map_err(|e| format!("Failed to read marker code: {}", e))?;
         if code != marker::APP1 {
             continue;
         }
         // The next 2 bytes are the length of the segment.
-        let len = marker::read16(reader)
+        let len = utils::read16(reader)
             .map_err(|e| format!("Failed to read segment length: {}", e))?
             .checked_sub(2)
             .ok_or("Invalid segment length".to_string())?;

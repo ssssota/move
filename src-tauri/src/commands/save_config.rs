@@ -1,10 +1,8 @@
+use crate::commands::result::Result;
 use crate::config::{Config, CONFIG_FILE};
 
 #[tauri::command]
-pub fn save_config<R: tauri::Runtime>(
-    app: tauri::AppHandle<R>,
-    config: Config,
-) -> Result<(), String> {
+pub fn save_config<R: tauri::Runtime>(app: tauri::AppHandle<R>, config: Config) -> Result<()> {
     let config_path = tauri::api::path::config_dir()
         .ok_or_else(|| "Not found config directory".to_string())?
         .join(app.config().tauri.bundle.identifier.clone())

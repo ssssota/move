@@ -1,5 +1,9 @@
+mod atom;
 mod exif;
 mod move_file;
+mod utils;
+
+use crate::commands::result::Result;
 
 use std::path::Path;
 
@@ -27,7 +31,7 @@ pub fn commit<R: tauri::Runtime>(
     target: String,
     pattern: String,
     dry_run: bool,
-) -> Result<Commit, String> {
+) -> Result<Commit> {
     let source_dir = Path::new(&source);
     let target_dir = Path::new(&target);
     if !source_dir.is_absolute() {
@@ -55,17 +59,18 @@ pub fn commit<R: tauri::Runtime>(
             let extension = path
                 .extension()
                 .and_then(|e| e.to_str())
-                .map(|e| e.to_lowercase());
-            let parser = extension.as_deref().and_then(|ext| match ext {
-                "jpg" | "jpeg" | "heif" | "heic" | "avif" | "webp" | "png" | "nef" | "cr2"
-                | "dng" | "orf" | "arw" | "rw2" | "raf" | "mrw" | "tif" | "tiff" => {
-                    Some(exif::read_taken_at_from_exif)
+                .map(|e| e.to_lowercase())
+                .unwrap_or("".to_string());
+            let created = match &extension[..] {
+                "jpg" | "jpeg" | "heif" | "heic" | "avif" | "webp" | "png" | "nef" | "nrw"
+                | "cr2" | "dng" | "arw" | "sr2" | "srf" | "rw2" | "raf" | "pef" | "mos" | "3fr"
+                | "erf" | "mef" | "dcr" | "srw" | "tif" | "tiff" => {
+                    exif::read_taken_at_from_exif(path)
                 }
-                _ => None,
-            });
-            let created = parser
-                .map(|parse| parse(path))
-                .unwrap_or_else(|| get_created_at(&entry))?;
+                "mp4" | "m4v" | "mov" | "qt" => atom::read_taken_at_from_atom(path),
+                _ => Err("Unsupported file type".to_string()),
+            }
+            .unwrap_or_else(|_| get_created_at(&entry).unwrap_or_else(|_| Local::now()));
             let resolved_pattern = pattern
                 .replace("{CREATED_YYYY}", format!("{:04}", created.year()).as_str())
                 .replace("{CREATED_MM}", format!("{:02}", created.month()).as_str())
@@ -78,7 +83,7 @@ pub fn commit<R: tauri::Runtime>(
                 target.to_string_lossy().to_string(),
             ))
         })
-        .collect::<Result<Vec<(String, String)>, String>>()?;
+        .collect::<Result<Vec<(String, String)>>>()?;
     if dry_run {
         return Ok(Commit { entries });
     }
@@ -98,7 +103,7 @@ pub fn commit<R: tauri::Runtime>(
     Ok(Commit { entries })
 }
 
-fn get_created_at(entry: &DirEntry) -> Result<DateTime<Local>, String> {
+fn get_created_at(entry: &DirEntry) -> Result<DateTime<Local>> {
     let meta = entry
         .metadata()
         .map_err(|e| format!("Failed to load metadata: {}", e))?;
